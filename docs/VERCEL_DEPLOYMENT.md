@@ -29,7 +29,9 @@ After changing an environment variable, redeploy the frontend.
 
 ## Backend and database
 
-The Vercel project only hosts the frontend. It calls the FastAPI service directly from the browser. Deploy the API using the root `render.yaml` Blueprint and set the server-only `DATABASE_URL` to the Supabase PostgreSQL connection string.
+The Vercel project only hosts the frontend. It calls the FastAPI service directly from the browser. Deploy the API using the root `render.yaml` Blueprint. The current Blueprint targets a Free Web Service in Singapore and the Docker container listens on Render's `PORT` (default 10000).
+
+For `DATABASE_URL`, open the Supabase project and select **Connect → Session pooler**. Copy the full URI into the Render service's Environment page. Use the host and username exactly as Supabase provides them; the shared pooler username includes the project reference and the host cannot safely be inferred from the project region. Use port `5432` (session mode), not the `6543` transaction-pooler URL. Render uses IPv4, while Supabase's direct connection can be IPv6-only; Supabase documents its shared pooler as IPv4-compatible. Never paste the database password into GitHub or a `VITE_*` variable.
 
 The API's `CORS_ORIGINS` contains the likely production aliases `https://fraud-lens.vercel.app` and `https://fraudlens-ai.vercel.app`; `CORS_ORIGIN_REGEX` permits deployment-specific URLs for either project-name prefix. Confirm the production origin in Vercel and add it to `CORS_ORIGINS` if it differs. If Vercel assigns a different production domain, add that exact origin to the API's `CORS_ORIGINS` and redeploy the API.
 
