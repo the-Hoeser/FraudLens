@@ -31,7 +31,7 @@ Vercel project settings:
 - Root Directory: `frontend`
 - Framework Preset: TanStack Start
 - Node.js: 22.x or newer
-- Install: `bun install --frozen-lockfile`
+- Install: `bun install`
 - Build: `bun run build`
 
 `vercel.json` declares the TanStack Start framework. Nitro compiles the app for Vercel Functions.
