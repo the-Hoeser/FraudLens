@@ -31,7 +31,7 @@ After changing an environment variable, redeploy the frontend.
 
 The Vercel project only hosts the frontend. It calls the FastAPI service directly from the browser. Deploy the API using the root `render.yaml` Blueprint and set the server-only `DATABASE_URL` to the Supabase PostgreSQL connection string.
 
-The API's `CORS_ORIGINS` contains the production alias `https://fraudlens-ai.vercel.app`; `CORS_ORIGIN_REGEX` permits preview deployment origins matching the FraudLens Vercel project name. If Vercel assigns a different production domain, add that exact origin to the API's `CORS_ORIGINS` and redeploy the API.
+The API's `CORS_ORIGINS` contains the likely production aliases `https://fraud-lens.vercel.app` and `https://fraudlens-ai.vercel.app`; `CORS_ORIGIN_REGEX` permits deployment-specific URLs for either project-name prefix. Confirm the production origin in Vercel and add it to `CORS_ORIGINS` if it differs. If Vercel assigns a different production domain, add that exact origin to the API's `CORS_ORIGINS` and redeploy the API.
 
 Verify the backend before the frontend:
 
