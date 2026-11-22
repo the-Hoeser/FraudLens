@@ -23,6 +23,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { isDemo } from "@/lib/data/source";
+import { isApiConfigured } from "@/lib/api/config";
 
 const groups = [
   { label: "Overview", items: [{ title: "Dashboard", url: "/", icon: LayoutDashboard }] },
@@ -98,10 +99,15 @@ export function AppSidebar() {
               <span className="font-mono text-[0.65rem] uppercase tracking-wider text-warning">Demo mode</span>
               <p className="mt-1">No backend connected. Records shown are generated fixtures.</p>
             </>
-          ) : (
+          ) : isApiConfigured() ? (
             <>
               <span className="font-mono text-[0.65rem] uppercase tracking-wider text-primary">Live API</span>
               <p className="mt-1">Data comes from your configured FraudLens backend.</p>
+            </>
+          ) : (
+            <>
+              <span className="font-mono text-[0.65rem] uppercase tracking-wider text-warning">Setup required</span>
+              <p className="mt-1">Set VITE_API_BASE_URL to connect the FastAPI service.</p>
             </>
           )}
           <p className="mt-2 border-t border-sidebar-border pt-2">

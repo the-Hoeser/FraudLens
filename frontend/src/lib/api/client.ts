@@ -9,10 +9,12 @@ import {
   errorEnvelopeSchema,
   healthSchema,
   modelMetricsSchema,
+  modelInfoResponseSchema,
   predictResponseSchema,
   transactionPageSchema,
   transactionSchema,
   type FeatureRow,
+  type ModelInfoResponse,
   type TransactionQuery,
 } from "./types";
 
@@ -66,9 +68,9 @@ export function createApiClient(options: ApiClientOptions) {
     if (!baseUrl) {
       throw new ApiError("Backend not configured", { status: 0, code: "not_configured" });
     }
-    const { query, ...rest } = init;
+    const { query, timeoutMs: requestTimeoutMs = timeoutMs, ...rest } = init;
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const timer = setTimeout(() => controller.abort(), requestTimeoutMs);
     let response: Response;
     try {
       response = await fetchImpl(buildUrl(baseUrl, path, query), {
@@ -132,11 +134,18 @@ export function createApiClient(options: ApiClientOptions) {
     submitAnalysis: (file: File | Blob, filename = "upload.csv") => {
       const form = new FormData();
       form.append("file", file, file instanceof File ? file.name : filename);
-      return request("/api/analyze", analyzeAcceptedSchema, { method: "POST", body: form });
+      // Large benchmark CSVs upload directly from the browser to FastAPI; do not
+      // abort the request using the short default timeout for small JSON calls.
+      return request("/api/analyze", analyzeAcceptedSchema, {
+        method: "POST",
+        body: form,
+        timeoutMs: 15 * 60 * 1000,
+      });
     },
     getAnalysisJob: (jobId: string) =>
       request(`/api/analyze/${encodeURIComponent(jobId)}`, analysisJobSchema),
     getModelMetrics: () => request("/api/model/metrics", modelMetricsSchema),
+    getModelInfo: () => request<ModelInfoResponse>("/api/model/info", modelInfoResponseSchema),
     predict: (transactions: FeatureRow[]) =>
       request("/api/predict", predictResponseSchema, {
         method: "POST",

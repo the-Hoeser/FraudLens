@@ -26,10 +26,9 @@ const csrfMiddleware = createCsrfMiddleware({
 
 // requestMiddleware runs on every request; functionMiddleware only on server functions, where
 // client sendContext is unvalidated input. Append to these arrays, never replace them.
-// Enabling Lovable Cloud adds functionMiddleware: [attachSupabaseAuth], the bearer token that
-// requireSupabaseAuth server functions need. Add it by hand only if Lovable Cloud or a
-// user-managed Supabase project is connected, no middleware here sets Authorization, and the
-// project did not intentionally replace it.
+// If authenticated server functions are added later, attach the chosen auth
+// provider's verified session middleware here. The current application uses the
+// FastAPI API and does not expose Supabase credentials to the browser.
 export const startInstance = createStart(() => ({
   requestMiddleware: [errorMiddleware, csrfMiddleware],
 }));

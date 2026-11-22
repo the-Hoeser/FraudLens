@@ -49,6 +49,7 @@ export const healthSchema = z.object({
   model_loaded: z.boolean(),
   model_version: z.string().nullable(),
   database: z.enum(["not_configured", "connected", "error"]),
+  database_provider: z.enum(["postgresql", "sqlite", "unknown"]).optional(),
   timestamp: z.string(),
 });
 export type Health = z.infer<typeof healthSchema>;
@@ -155,6 +156,12 @@ export const modelInfoSchema = z.object({
   limitations: z.array(z.string()),
 });
 export type ModelInfo = z.infer<typeof modelInfoSchema>;
+
+export const modelInfoResponseSchema = z.union([
+  modelInfoSchema,
+  z.object({ status: z.literal("not_trained"), reason: z.string() }),
+]);
+export type ModelInfoResponse = z.infer<typeof modelInfoResponseSchema>;
 
 export const confusionMatrixSchema = z.object({
   tp: z.number().int(),

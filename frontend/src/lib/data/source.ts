@@ -8,14 +8,17 @@ import { DEMO_END_DATE, DEMO_MODEL_VERSION, demoTransactions } from "@/lib/demo/
 import { queryTransactions, summarizeTransactions } from "@/lib/demo/transforms";
 
 /**
- * Where dashboard/transaction data comes from:
- *  - "live": VITE_API_BASE_URL is set → always the API. Failures surface as errors;
- *    we never silently fall back to demo data.
- *  - "demo": no backend configured → clearly labelled fixtures for UI preview.
- * Model metrics, the registry and analysis jobs have NO demo mode.
+ * Production always uses the configured API. Synthetic fixtures are available
+ * only when VITE_DEMO_MODE=true and no API URL is configured. With neither set,
+ * pages call the API client and surface its explicit not_configured state.
  */
-export type DataSource = "live" | "demo";
-export const dataSource: DataSource = isApiConfigured() ? "live" : "demo";
+export type DataSource = "live" | "demo" | "offline";
+const demoModeRequested = import.meta.env["VITE_DEMO_MODE"] === "true";
+export const dataSource: DataSource = isApiConfigured()
+  ? "live"
+  : demoModeRequested
+    ? "demo"
+    : "offline";
 export const isDemo = dataSource === "demo";
 
 export const dashboardQuery = () =>
@@ -30,7 +33,8 @@ export const dashboardQuery = () =>
 export const transactionsQuery = (q: TransactionQuery) =>
   queryOptions({
     queryKey: ["transactions", dataSource, q],
-    queryFn: async () => (isDemo ? queryTransactions(demoTransactions(), q) : apiClient.listTransactions(q)),
+    queryFn: async () =>
+      isDemo ? queryTransactions(demoTransactions(), q) : apiClient.listTransactions(q),
     placeholderData: (prev) => prev,
   });
 
@@ -61,6 +65,14 @@ export const modelMetricsQuery = () =>
   queryOptions({
     queryKey: ["model-metrics"],
     queryFn: () => apiClient.getModelMetrics(),
+    enabled: isApiConfigured(),
+    retry: false,
+  });
+
+export const modelInfoQuery = () =>
+  queryOptions({
+    queryKey: ["model-info"],
+    queryFn: () => apiClient.getModelInfo(),
     enabled: isApiConfigured(),
     retry: false,
   });

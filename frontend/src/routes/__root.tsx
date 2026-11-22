@@ -8,16 +8,16 @@ import {
   Scripts,
   type ErrorComponentProps,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { Badge } from "@/components/ui/badge";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { isDemo } from "@/lib/data/source";
+import { isApiConfigured } from "@/lib/api/config";
 
 function NotFoundComponent() {
   return (
@@ -44,10 +44,6 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
   const router = useRouter();
-  useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
@@ -154,10 +150,15 @@ function RootComponent() {
                       <span className="size-1.5 rounded-full bg-current animate-pulse-dot" aria-hidden />
                       Demo data
                     </Badge>
-                  ) : (
+                  ) : isApiConfigured() ? (
                     <Badge variant="live">
                       <span className="size-1.5 rounded-full bg-current" aria-hidden />
                       Live API
+                    </Badge>
+                  ) : (
+                    <Badge variant="warning">
+                      <span className="size-1.5 rounded-full bg-current animate-pulse-dot" aria-hidden />
+                      API not configured
                     </Badge>
                   )}
                 </div>
