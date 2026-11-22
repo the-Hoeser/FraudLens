@@ -9,7 +9,7 @@ An educational fraud-detection analytics application with a React/TanStack Start
 - **FastAPI deployment Blueprint:** https://render.com/deploy?repo=https://github.com/the-Hoeser/FraudLens
 - **Supabase project:** https://supabase.com/dashboard/project/oguoloekvtetjhjziiir
 
-The Vercel URL is the intended production alias. The frontend is deployed separately from the API; set `VITE_API_BASE_URL` in Vercel to the actual HTTPS URL of the deployed FastAPI service before the app can show live backend data.
+The Vercel URL is the intended production alias; it becomes the live link after the Vercel project and deployment are successfully created. The frontend is deployed separately from the API; set `VITE_API_BASE_URL` in Vercel to the actual HTTPS URL of the deployed FastAPI service before the app can show live backend data.
 
 ## Architecture
 

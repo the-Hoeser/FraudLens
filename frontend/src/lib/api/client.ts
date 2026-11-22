@@ -63,7 +63,7 @@ export function createApiClient(options: ApiClientOptions) {
   async function request<T>(
     path: string,
     schema: ZodType<T>,
-    init: RequestInit & { query?: Record<string, QueryValue> } = {},
+    init: RequestInit & { query?: Record<string, QueryValue>; timeoutMs?: number } = {},
   ): Promise<T> {
     if (!baseUrl) {
       throw new ApiError("Backend not configured", { status: 0, code: "not_configured" });
