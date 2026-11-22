@@ -4,11 +4,11 @@
 
 A Netlify site has been created for this repository:
 
-- **Project:** `fraudlens-ai-lsou`
+- **Project:** `fraudylens-ai`
 - **Dashboard:** https://app.netlify.com/projects/fraudlens-ai-lsou
 - **Primary URL:** https://fraudlens-ai-lsou.netlify.app
 
-The site is created but does not yet have a Git-connected deploy. In Netlify, open the project and choose **Project configuration → Build & deploy → Continuous deployment → Link repository**. Select GitHub repository `the-Hoeser/FraudLens` and production branch `main`.
+The existing `fraudylens-ai` project has a successful production deployment on branch `main`, using the current GitHub commit.
 
 The root `netlify.toml` configures the monorepo build:
 
@@ -30,7 +30,7 @@ Set these in **Project configuration → Environment variables** for Production 
 |---|---|
 | `VITE_API_BASE_URL` | HTTPS origin of the deployed FastAPI service (set once Render is live) |
 
-`VITE_DEMO_MODE=false` is set as a non-secret build variable in the repository's `netlify.toml`.
+`VITE_DEMO_MODE=false` is set as a non-secret site environment variable in Netlify (Builds scope).
 
 These `VITE_*` values are embedded in the browser bundle. Only the public API origin belongs there. Never put `DATABASE_URL`, database passwords, Supabase service-role keys or other secrets into Netlify frontend variables.
 
