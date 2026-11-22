@@ -4,7 +4,7 @@ An educational fraud-detection analytics application with a React/TanStack Start
 
 ## Links
 
-- **Frontend target (Vercel):** https://fraudlens-ai.vercel.app
+- **Frontend target (Netlify):** https://fraudlens-ai-lsou.netlify.app (site created; GitHub linking and first deploy pending)
 - **GitHub source:** https://github.com/the-Hoeser/FraudLens
 - **FastAPI deployment Blueprint:** https://render.com/deploy?repo=https://github.com/the-Hoeser/FraudLens
 - **Supabase project:** https://supabase.com/dashboard/project/oguoloekvtetjhjziiir
@@ -15,7 +15,7 @@ The Vercel URL is the intended production alias; it becomes the live link after 
 
 ```
 Browser
-  └── FraudLens React / TanStack Start (Vercel)
+  └── FraudLens React / TanStack Start (Netlify)
         └── HTTPS requests to FastAPI (Render)
               ├── ML inference and CSV analysis
               └── SQLAlchemy → Supabase PostgreSQL
@@ -25,7 +25,8 @@ The browser never connects directly to Supabase and never receives database cred
 
 ## Repository structure
 
-- `frontend/` — React 19 + TypeScript + TanStack Start UI, API client, Vercel deployment config.
+- `frontend/` — React 19 + TypeScript + TanStack Start UI and API client.
+- `netlify.toml` — Netlify monorepo build configuration.
 - `backend/` — FastAPI endpoints, model inference, CSV validation, SQLAlchemy persistence, training pipeline.
 - `supabase/` — database schema and migration files.
 - `testbed/` — standalone API diagnostic/test page.
@@ -61,18 +62,17 @@ cp .env.example .env
 bun run dev
 ```
 
-## Deploy frontend to Vercel
+## Deploy frontend to Netlify
 
-1. Import `the-Hoeser/FraudLens` in Vercel.
-2. Set **Root Directory** to `frontend`.
-3. Select **TanStack Start** as the framework preset (also declared in `frontend/vercel.json`).
-4. Use Node.js 22.x or newer and Bun for dependency installation.
-5. Set `VITE_API_BASE_URL` to the deployed FastAPI origin and `VITE_DEMO_MODE=false`.
-6. Deploy. Subsequent pushes to `main` should create production deployments.
+1. Open the existing [FraudLens Netlify project](https://app.netlify.com/projects/fraudlens-ai-lsou).
+2. Link the GitHub repository `the-Hoeser/FraudLens` and use `main` as the production branch.
+3. The root `netlify.toml` supplies the `frontend` base directory, Bun install/build commands, and `dist/client` publish directory.
+4. Add `VITE_DEMO_MODE=false`; add `VITE_API_BASE_URL` after the Render API is live.
+5. Deploy. Subsequent pushes to `main` should create production deploys.
 
-Only a public API URL belongs in a `VITE_*` variable. Never add `DATABASE_URL`, database passwords or Supabase service-role keys to Vercel frontend environment variables.
+Only public API configuration belongs in `VITE_*` variables. Never add `DATABASE_URL`, database passwords or Supabase service-role keys to Netlify frontend environment variables.
 
-See [Vercel deployment notes](docs/VERCEL_DEPLOYMENT.md).
+See [Netlify deployment notes](docs/NETLIFY_DEPLOYMENT.md).
 
 ## Deploy the API and connect Supabase
 
@@ -82,13 +82,13 @@ The root `render.yaml` defines a Docker web service on Render's Free plan in Sin
 - `MAX_UPLOAD_BYTES=314572800`
 - `MAX_UPLOAD_ROWS=300000`
 
-CORS is configured for the `fraud-lens` and `fraudlens-ai` Vercel project URL prefixes, plus local development. Confirm the assigned production domain and add it to `CORS_ORIGINS` if it differs. The backend health endpoint reports whether it is using PostgreSQL or SQLite. Production should report `database=connected` and `database_provider=postgresql`.
+CORS is configured for the `fraudlens-ai-lsou.netlify.app` production site and its Netlify branch/deploy-preview hostname pattern, plus local development. The backend health endpoint reports whether it is using PostgreSQL or SQLite. Production should report `database=connected` and `database_provider=postgresql`.
 
 The Supabase schema is in `supabase/schema.sql`; the dedicated project already has `analysis_jobs` and `transactions` tables with RLS enabled and browser access denied.
 
 ## Upload limits
 
-The frontend and backend application limits are both 300 MiB / 300,000 rows. The browser validates with streaming `File.stream()`; the backend streams the incoming upload to a temporary file and validates in chunks. The browser sends the upload directly to FastAPI, not through a Vercel Function. The API hosting provider's own request-body limit still applies—verify using the real 150.8 MB ULB benchmark file before treating the limit as end-to-end.
+The frontend and backend application limits are both 300 MiB / 300,000 rows. The browser validates with streaming `File.stream()`; the backend streams the incoming upload to a temporary file and validates in chunks. The browser sends the upload directly to FastAPI, not through a Netlify Function. The API hosting provider's own request-body limit still applies—verify using the real 150.8 MB ULB benchmark file before treating the limit as end-to-end.
 
 ## Dataset and model training
 
