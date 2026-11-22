@@ -54,7 +54,7 @@ Use Bun (the repository includes `frontend/bun.lock`):
 
 ```bash
 cd frontend
-bun install --frozen-lockfile
+bun install
 cp .env.example .env
 # VITE_API_BASE_URL=http://localhost:8000
 # VITE_DEMO_MODE=false
