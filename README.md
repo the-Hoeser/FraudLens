@@ -76,9 +76,9 @@ See [Vercel deployment notes](docs/VERCEL_DEPLOYMENT.md).
 
 ## Deploy the API and connect Supabase
 
-The root `render.yaml` defines a Docker web service. Create a Blueprint from this repository and set:
+The root `render.yaml` defines a Docker web service on Render's Free plan in Singapore. The Blueprint creates the backend service; complete its initial sync in Render and set:
 
-- `DATABASE_URL`: Supabase PostgreSQL connection string (server-side secret only).
+- `DATABASE_URL`: Supabase **Connect → Session pooler** URI on port `5432` (server-side secret only). Copy the whole URI from the dashboard; do not construct the pooler host or commit the password.
 - `MAX_UPLOAD_BYTES=314572800`
 - `MAX_UPLOAD_ROWS=300000`
 
