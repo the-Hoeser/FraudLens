@@ -2,6 +2,9 @@ services:
   - type: web
     name: fraudlens-api
     runtime: docker
+    plan: free
+    region: singapore
+    autoDeployTrigger: checksPass
     dockerfilePath: ./backend/Dockerfile
     dockerContext: .
     healthCheckPath: /health
