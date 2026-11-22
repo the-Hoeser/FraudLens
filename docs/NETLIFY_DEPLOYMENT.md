@@ -28,8 +28,9 @@ Set these in **Project configuration → Environment variables** for Production 
 
 | Name | Value |
 |---|---|
-| `VITE_DEMO_MODE` | `false` |
 | `VITE_API_BASE_URL` | HTTPS origin of the deployed FastAPI service (set once Render is live) |
+
+`VITE_DEMO_MODE=false` is set as a non-secret build variable in the repository's `netlify.toml`.
 
 These `VITE_*` values are embedded in the browser bundle. Only the public API origin belongs there. Never put `DATABASE_URL`, database passwords, Supabase service-role keys or other secrets into Netlify frontend variables.
 
