@@ -4,12 +4,12 @@ An educational fraud-detection analytics application with a React/TanStack Start
 
 ## Links
 
-- **Frontend target (Netlify):** https://fraudlens-ai-lsou.netlify.app (site created; GitHub linking and first deploy pending)
+- **Frontend target (Netlify):** https://fraudylens-ai.netlify.app
 - **GitHub source:** https://github.com/the-Hoeser/FraudLens
 - **FastAPI deployment Blueprint:** https://render.com/deploy?repo=https://github.com/the-Hoeser/FraudLens
 - **Supabase project:** https://supabase.com/dashboard/project/oguoloekvtetjhjziiir
 
-The Vercel URL is the intended production alias; it becomes the live link after the Vercel project and deployment are successfully created. The frontend is deployed separately from the API; set `VITE_API_BASE_URL` in Vercel to the actual HTTPS URL of the deployed FastAPI service before the app can show live backend data.
+The Netlify production site is live at https://fraudylens-ai.netlify.app. The frontend calls the separate FastAPI backend; add `VITE_API_BASE_URL` once the Render API is deployed. The frontend is deployed separately from the API; set `VITE_API_BASE_URL` in Vercel to the actual HTTPS URL of the deployed FastAPI service before the app can show live backend data.
 
 ## Architecture
 
@@ -64,7 +64,7 @@ bun run dev
 
 ## Deploy frontend to Netlify
 
-1. Open the existing [FraudLens Netlify project](https://app.netlify.com/projects/fraudlens-ai-lsou).
+1. Open the existing [FraudLens Netlify project](https://app.netlify.com/projects/fraudylens-ai).
 2. Link the GitHub repository `the-Hoeser/FraudLens` and use `main` as the production branch.
 3. The root `netlify.toml` supplies the `frontend` base directory, Bun install/build commands, and `dist/client` publish directory.
 4. Add `VITE_DEMO_MODE=false`; add `VITE_API_BASE_URL` after the Render API is live.
@@ -82,7 +82,7 @@ The root `render.yaml` defines a Docker web service on Render's Free plan in Sin
 - `MAX_UPLOAD_BYTES=314572800`
 - `MAX_UPLOAD_ROWS=300000`
 
-CORS is configured for the `fraudlens-ai-lsou.netlify.app` production site and its Netlify branch/deploy-preview hostname pattern, plus local development. The backend health endpoint reports whether it is using PostgreSQL or SQLite. Production should report `database=connected` and `database_provider=postgresql`.
+CORS is configured for the `fraudylens-ai.netlify.app` production site and its Netlify branch/deploy-preview hostname pattern, plus local development. The backend health endpoint reports whether it is using PostgreSQL or SQLite. Production should report `database=connected` and `database_provider=postgresql`.
 
 The Supabase schema is in `supabase/schema.sql`; the dedicated project already has `analysis_jobs` and `transactions` tables with RLS enabled and browser access denied.
 
