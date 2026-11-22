@@ -1,0 +1,100 @@
+/** Add to src/lib/csv/schema.ts. Uses streaming chunks so large files are not loaded as one string. */
+export async function validateCsvFile(file: File): Promise<CsvValidationResult> {
+  const result: CsvValidationResult = {
+    valid: false, headers: [], rowCount: 0, hasLabelColumn: false,
+    preview: [], errors: [], warnings: [], truncatedErrors: false,
+  };
+  const push = (issue: CsvValidationIssue) => {
+    if (result.errors.length < MAX_REPORTED_ISSUES) result.errors.push(issue);
+    else result.truncatedErrors = true;
+  };
+
+  if (file.size > MAX_UPLOAD_BYTES) {
+    push({ row: null, column: null, message: `File is larger than ${MAX_UPLOAD_BYTES / 1024 / 1024} MiB.` });
+    return result;
+  }
+  if (!file.size) {
+    push({ row: null, column: null, message: "The file is empty." });
+    return result;
+  }
+
+  const reader = file.stream().getReader();
+  const decoder = new TextDecoder("utf-8", { fatal: true });
+  let pending = "";
+  let headers: string[] | null = null;
+  let dataRow = 0;
+
+  const processLine = (rawLine: string) => {
+    const line = rawLine.replace(/\r$/, "");
+    if (!line.trim()) return;
+    const cells = parseCsv(line)[0] ?? [];
+
+    if (headers === null) {
+      headers = cells.map((cell) => cell.trim().replace(/^\uFEFF/, ""));
+      result.headers = headers;
+      result.hasLabelColumn = headers.includes("Class");
+      const seen = new Set<string>();
+      for (const header of headers) {
+        if (seen.has(header)) push({ row: null, column: header, message: `Duplicate column "${header}".` });
+        seen.add(header);
+      }
+      const missing = [...REQUIRED].filter((column) => !seen.has(column));
+      if (missing.length) push({ row: null, column: null, message: `Missing required column(s): ${missing.join(", ")}.` });
+      const unexpected = headers.filter((header) => !ALLOWED.has(header));
+      if (unexpected.length) push({ row: null, column: null, message: `Unexpected column(s): ${unexpected.join(", ")}. Remove personal or payment data.` });
+      return;
+    }
+
+    dataRow += 1;
+    result.rowCount = dataRow;
+    if (dataRow > MAX_UPLOAD_ROWS) {
+      push({ row: null, column: null, message: `Too many rows. The limit is ${MAX_UPLOAD_ROWS.toLocaleString()}.` });
+      return;
+    }
+    if (cells.length !== headers.length) {
+      push({ row: dataRow, column: null, message: `Expected ${headers.length} values, found ${cells.length}.` });
+      return;
+    }
+
+    const previewRow: Record<string, string> = {};
+    headers.forEach((header, columnIndex) => {
+      const raw = (cells[columnIndex] ?? "").trim();
+      previewRow[header] = raw;
+      const value = Number(raw);
+      if (raw === "" || !Number.isFinite(value)) {
+        push({ row: dataRow, column: header, message: "Missing, non-numeric, or non-finite value." });
+      } else if ((header === "Time" || header === "Amount") && value < 0) {
+        push({ row: dataRow, column: header, message: "Must be ≥ 0." });
+      } else if (header === "Class" && value !== 0 && value !== 1) {
+        push({ row: dataRow, column: header, message: "Class must be 0 or 1." });
+      }
+    });
+    if (result.preview.length < PREVIEW_ROWS) result.preview.push(previewRow);
+  };
+
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      pending += decoder.decode(value, { stream: true });
+      const lines = pending.split("\n");
+      pending = lines.pop() ?? "";
+      for (const line of lines) processLine(line);
+      if (result.rowCount > MAX_UPLOAD_ROWS || result.errors.length >= MAX_REPORTED_ISSUES) break;
+    }
+    pending += decoder.decode();
+    if (pending) processLine(pending);
+  } catch {
+    push({ row: null, column: null, message: "Could not decode the CSV as UTF-8." });
+  } finally {
+    await reader.cancel().catch(() => undefined);
+  }
+
+  if (headers === null) push({ row: null, column: null, message: "The file is empty or has no header row." });
+  else if (dataRow === 0) push({ row: null, column: null, message: "The file has a header but no data rows." });
+  if (result.hasLabelColumn) {
+    result.warnings.push("Class is ignored for prediction (to prevent label leakage) and retained only for offline comparison.");
+  }
+  result.valid = result.errors.length === 0;
+  return result;
+}
