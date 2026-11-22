@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { isApiConfigured } from "@/lib/api/config";
 import { modelInfoQuery } from "@/lib/data/source";
+import type { ModelInfo } from "@/lib/api/types";
 import { formatDateTime, formatInt, formatPercent } from "@/lib/format";
 
 export const Route = createFileRoute("/registry")({
@@ -53,7 +54,7 @@ function RegistryPage() {
   );
 }
 
-function RegistryDetails({ model }: { model: Exclude<Awaited<ReturnType<ReturnType<typeof modelInfoQuery>["queryFn"]>>, { status: "not_trained" }> }) {
+function RegistryDetails({ model }: { model: ModelInfo }) {
   return (
     <>
       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
@@ -77,7 +78,7 @@ function RegistryDetails({ model }: { model: Exclude<Awaited<ReturnType<ReturnTy
         <Section title="Training dataset" description={model.dataset.name}>
           <dl className="space-y-3 text-sm">
             <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Rows</dt><dd className="numeric">{formatInt(model.dataset.rows)}</dd></div>
-            <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Fraud prevalence</dt><dd className="numeric">{formatPercent(model.dataset.positive_rate * 100, 3)}</dd></div>
+            <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Fraud prevalence</dt><dd className="numeric">{formatPercent(model.dataset.positive_rate, 3)}</dd></div>
             <div className="flex justify-between gap-4"><dt className="text-muted-foreground">SHA-256</dt><dd className="numeric max-w-[65%] break-all text-right text-xs">{model.dataset.sha256 ?? "not recorded"}</dd></div>
             <a href={model.dataset.source_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">
               Dataset source <BookOpenText className="size-3" aria-hidden />

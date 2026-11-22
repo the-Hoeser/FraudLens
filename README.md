@@ -1,38 +1,36 @@
 # FraudLens AI
 
-Educational credit-card fraud detection and analytics. This repository now contains the Lovable React/TypeScript frontend source under `frontend/`, a Python FastAPI backend under `backend/`, Supabase schema/migrations, a browser API test bench, CI, and deployment configuration.
+An educational fraud-detection analytics application with a React/TanStack Start frontend, FastAPI backend, scikit-learn training pipeline and Supabase PostgreSQL persistence.
 
 ## Links
 
-- **GitHub repository:** https://github.com/the-Hoeser/FraudLens
-- **Lovable editor:** https://lovable.dev/projects/0c85117c-186d-40a5-a7e5-c54f5cdc98f7
-- **Lovable preview:** https://id-preview--0c85117c-186d-40a5-a7e5-c54f5cdc98f7.lovable.app
-- **API test bench (after Pages is enabled):** https://the-hoeser.github.io/FraudLens/
-- **Render Blueprint:** https://render.com/deploy?repo=https://github.com/the-Hoeser/FraudLens
+- **Frontend target (Vercel):** https://fraudlens-ai.vercel.app
+- **GitHub source:** https://github.com/the-Hoeser/FraudLens
+- **FastAPI deployment Blueprint:** https://render.com/deploy?repo=https://github.com/the-Hoeser/FraudLens
 - **Supabase project:** https://supabase.com/dashboard/project/oguoloekvtetjhjziiir
 
-## Upload limit — exact current state
+The Vercel URL is the intended production alias. The frontend is deployed separately from the API; set `VITE_API_BASE_URL` in Vercel to the actual HTTPS URL of the deployed FastAPI service before the app can show live backend data.
 
-| Layer | Limit | Status |
-|---|---:|---|
-| FastAPI backend source | 300 MiB / 300,000 rows | Configured |
-| GitHub `frontend/` source | 300 MiB / 300,000 rows | Patched with streaming `File.stream()` validation |
-| Standalone `testbed/` page | 300 MiB / 300,000 rows | Patched with streaming validation |
-| Hosted Lovable preview | 10 MiB / 50,000 rows | **Not yet synced** |
-| Deployed API host | Must be verified | Render service not deployed yet |
+## Architecture
 
-I verified that the Lovable project's latest commit is still its earlier scaffold commit and its `src/lib/csv/schema.ts` still declares 10 MiB / 50,000 rows. The source copy in this repository has been updated, but it has not yet synced back into the hosted Lovable project. Connect this repository/branch to the Lovable project's **Settings → Git** and sync `main`; then verify the deployed preview's new limit.
+```
+Browser
+  └── FraudLens React / TanStack Start (Vercel)
+        └── HTTPS requests to FastAPI (Render)
+              ├── ML inference and CSV analysis
+              └── SQLAlchemy → Supabase PostgreSQL
+```
 
-The backend's application-level limit is 300 MiB. This does not prove that a hosting proxy will accept a 150.8 MB request. The actual Kaggle file upload must be tested after the API service is deployed.
+The browser never connects directly to Supabase and never receives database credentials. The FastAPI service owns database access through the server-side `DATABASE_URL`.
 
 ## Repository structure
 
-- `frontend/` — Lovable React + TypeScript + TanStack Start source; run separately from its directory.
-- `backend/` — FastAPI, SQLAlchemy persistence, CSV validation, inference and ML training.
-- `testbed/` — standalone HTML page to test API health, metrics, streaming file validation, uploads and jobs.
-- `supabase/` — SQL schema and applied migrations.
-- `docs/` — data, model evaluation, security, Supabase and upload notes.
-- `scripts/` — Kaggle download/integrity-check scripts and Lovable upload patch utility.
+- `frontend/` — React 19 + TypeScript + TanStack Start UI, API client, Vercel deployment config.
+- `backend/` — FastAPI endpoints, model inference, CSV validation, SQLAlchemy persistence, training pipeline.
+- `supabase/` — database schema and migration files.
+- `testbed/` — standalone API diagnostic/test page.
+- `docs/` — deployment, data, evaluation and security notes.
+- `scripts/` — Kaggle download and dataset integrity tools.
 
 ## Run locally
 
@@ -50,63 +48,67 @@ cp .env.example .env
 uvicorn app.main:app --reload --port 8000
 ```
 
-- Health: http://localhost:8000/health
-- API docs: http://localhost:8000/docs
-
 ### Frontend
+
+Use Bun (the repository includes `frontend/bun.lock`):
 
 ```bash
 cd frontend
-bun install
+bun install --frozen-lockfile
 cp .env.example .env
-# Set VITE_API_BASE_URL=http://localhost:8000 in .env
+# VITE_API_BASE_URL=http://localhost:8000
+# VITE_DEMO_MODE=false
 bun run dev
 ```
 
-Do not put database passwords or service-role keys in a `VITE_*` variable.
+## Deploy frontend to Vercel
 
-## Test environment setup
+1. Import `the-Hoeser/FraudLens` in Vercel.
+2. Set **Root Directory** to `frontend`.
+3. Select **TanStack Start** as the framework preset (also declared in `frontend/vercel.json`).
+4. Use Node.js 22.x or newer and Bun for dependency installation.
+5. Set `VITE_API_BASE_URL` to the deployed FastAPI origin and `VITE_DEMO_MODE=false`.
+6. Deploy. Subsequent pushes to `main` should create production deployments.
 
-1. **API:** Open the Render Blueprint link above, connect this repository, create the web service from `render.yaml`, and configure the secrets below.
-2. **Pages:** Open repository **Settings → Pages**, set Source to **GitHub Actions**, and save. Then open **Actions → Deploy API test bench to GitHub Pages → Run workflow**. The workflow is manual because the first attempt could not create the Pages site with its automation token.
-3. **Test bench:** After the Pages workflow succeeds, open https://the-hoeser.github.io/FraudLens/ and enter the deployed API base URL.
-4. **Health:** Verify `/health` returns `status=ok`, `database=connected`, and check whether a trained model is loaded.
-5. **Large file:** upload the actual Kaggle CSV; verify that the hosting ingress accepts it and the job completes before treating the upload limit as end-to-end.
+Only a public API URL belongs in a `VITE_*` variable. Never add `DATABASE_URL`, database passwords or Supabase service-role keys to Vercel frontend environment variables.
 
-Render environment variables:
-- `DATABASE_URL`: Supabase Postgres connection string (server-only secret).
-- `CORS_ORIGINS`: exact Lovable preview origin and `https://the-hoeser.github.io`.
+See [Vercel deployment notes](docs/VERCEL_DEPLOYMENT.md).
+
+## Deploy the API and connect Supabase
+
+The root `render.yaml` defines a Docker web service. Create a Blueprint from this repository and set:
+
+- `DATABASE_URL`: Supabase PostgreSQL connection string (server-side secret only).
 - `MAX_UPLOAD_BYTES=314572800`
 - `MAX_UPLOAD_ROWS=300000`
 
-The Render service has not yet been provisioned from the Blueprint, and no `DATABASE_URL` secret has been set there. Supabase's dedicated Mumbai project and database schema are already provisioned; backend persistence becomes active after this server-side secret is configured.
+CORS is configured for the Vercel production alias, project-specific Vercel preview URLs and local development. The backend health endpoint reports whether it is using PostgreSQL or SQLite. Production should report `database=connected` and `database_provider=postgresql`.
 
-## Dataset and training
+The Supabase schema is in `supabase/schema.sql`; the dedicated project already has `analysis_jobs` and `transactions` tables with RLS enabled and browser access denied.
 
-Source: https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud
+## Upload limits
 
-Expected canonical data: 284,807 rows, 492 fraud labels, 284,315 legitimate labels and 31 columns (Time, V1–V28, Amount, Class). The CSV is not committed to Git. Accept the Kaggle terms and configure Kaggle CLI credentials, then run:
+The frontend and backend application limits are both 300 MiB / 300,000 rows. The browser validates with streaming `File.stream()`; the backend streams the incoming upload to a temporary file and validates in chunks. The browser sends the upload directly to FastAPI, not through a Vercel Function. The API hosting provider's own request-body limit still applies—verify using the real 150.8 MB ULB benchmark file before treating the limit as end-to-end.
+
+## Dataset and model training
+
+Dataset: https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud
+
+Expected canonical file: 284,807 rows, 492 fraud labels and 31 columns (`Time`, `V1`–`V28`, `Amount`, `Class`). The dataset is not committed to Git.
 
 ```bash
-# From repository root
 ./scripts/fetch_kaggle_dataset.sh
 python scripts/verify_dataset.py backend/data/raw/creditcard.csv
 cd backend
 python -m app.ml.train --data data/raw/creditcard.csv
 ```
 
-The training pipeline uses stratified 70/15/15 splits, compares class-weighted Logistic Regression and Random Forest using validation PR-AUC, selects the threshold using validation F1, and evaluates the held-out test set once. It reports precision, recall, F1, PR-AUC, ROC-AUC and confusion matrix. No real-data performance results are claimed yet.
-
-## Supabase
-
-Dedicated project: https://supabase.com/dashboard/project/oguoloekvtetjhjziiir
-
-Tables `analysis_jobs` and `transactions` are installed. RLS is enabled; browser table access is denied. The FastAPI host should use the database connection string as a server-only secret.
+Training compares class-weighted Logistic Regression and Random Forest, selects the model/threshold using validation data, and evaluates the held-out test set once. No real-dataset metrics are claimed until this command has run on the actual Kaggle CSV.
 
 ## CI
 
-Backend CI runs on pushes to `main` and pull requests. The in-memory SQLite test fixture uses a shared `StaticPool` to work across the API worker thread. See Actions for the current check status.
+GitHub Actions runs backend tests and frontend build/typecheck/tests on pushes and pull requests to `main`.
 
-## Scope and limitations
+## Scope
 
-This is an educational benchmark, not a production payment decision system. The public dataset covers two days of European card activity in September 2013; V1–V28 are anonymized PCA components. Do not upload real customer records, PANs, CVVs, names or account IDs.
+Educational benchmark only. The public dataset covers two days of European card activity in September 2013; V1–V28 are anonymized PCA components. Do not upload real customer records, PANs, CVVs, names or account IDs. Fraud scores are not proof of fraud and must not drive live payment decisions.

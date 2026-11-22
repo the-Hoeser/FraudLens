@@ -9,7 +9,9 @@ services:
       - key: DATABASE_URL
         sync: false
       - key: CORS_ORIGINS
-        sync: false
+        value: "https://fraudlens-ai.vercel.app,https://the-hoeser.github.io,http://localhost:5173,http://127.0.0.1:5173"
+      - key: CORS_ORIGIN_REGEX
+        value: "^https://fraudlens-ai(?:-[a-z0-9-]+)*\\.vercel\\.app$"
       - key: MODEL_DIR
         value: ./artifacts
       - key: MAX_UPLOAD_BYTES

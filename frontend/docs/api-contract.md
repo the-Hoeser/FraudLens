@@ -99,7 +99,8 @@ the detail endpoint.
 
 ```json
 { "status": "ok", "version": "0.1.0", "model_loaded": false, "model_version": null,
-  "database": "not_configured | connected | error", "timestamp": "…" }
+  "database": "not_configured | connected | error", "database_provider": "postgresql | sqlite | unknown",
+  "timestamp": "…" }
 ```
 
 ### `GET /api/dashboard/summary`

@@ -16,7 +16,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from .config import APP_VERSION, FEATURE_COLUMNS, MAX_UPLOAD_BYTES, cors_origins
+from .config import APP_VERSION, FEATURE_COLUMNS, MAX_UPLOAD_BYTES, cors_origin_regex, cors_origins
 from .db import AnalysisJob, TransactionRecord, get_database
 from .ml.inference import ModelBundle
 from .repository import dashboard_summary, job_to_dict, query_transactions, transaction_to_dict
@@ -56,6 +56,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins(),
+    allow_origin_regex=cors_origin_regex(),
     allow_credentials=False,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["Content-Type", "Accept", "Authorization", "X-Request-ID"],
@@ -80,13 +81,19 @@ async def request_validation_exception_handler(request: Request, exc: RequestVal
 
 @app.get("/health", response_model=Health)
 def health():
+    database_provider = "unknown"
     try:
-        database_state = "connected" if get_database().check() else "error"
+        database = get_database()
+        dialect = database.engine.dialect.name
+        if dialect in {"postgresql", "sqlite"}:
+            database_provider = dialect
+        database_state = "connected" if database.check() else "error"
     except Exception:
         database_state = "error"
     return {
         "status": "ok", "version": APP_VERSION, "model_loaded": model_bundle.is_loaded,
-        "model_version": model_bundle.version, "database": database_state, "timestamp": now_iso(),
+        "model_version": model_bundle.version, "database": database_state,
+        "database_provider": database_provider, "timestamp": now_iso(),
     }
 
 

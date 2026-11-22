@@ -20,5 +20,13 @@ DEFAULT_THRESHOLD = 0.5
 
 
 def cors_origins() -> list[str]:
-    raw = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
+    raw = os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173,https://fraudlens-ai.vercel.app",
+    )
     return [item.strip() for item in raw.split(",") if item.strip()]
+
+
+def cors_origin_regex() -> str | None:
+    raw = os.getenv("CORS_ORIGIN_REGEX", "").strip()
+    return raw or None

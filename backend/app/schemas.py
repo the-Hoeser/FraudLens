@@ -24,6 +24,7 @@ class Health(BaseModel):
     model_loaded: bool
     model_version: str | None
     database: Literal["not_configured", "connected", "error"]
+    database_provider: Literal["postgresql", "sqlite", "unknown"] = "unknown"
     timestamp: str
 
 
