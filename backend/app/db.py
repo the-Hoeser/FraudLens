@@ -5,6 +5,7 @@ from typing import Any
 
 from sqlalchemy import JSON, DateTime, Float, ForeignKey, Integer, String, create_engine, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from .config import DATABASE_URL
 
@@ -61,10 +62,19 @@ class Database:
             url = "postgresql+psycopg://" + url.removeprefix("postgres://")
         elif url.startswith("postgresql://"):
             url = "postgresql+psycopg://" + url.removeprefix("postgresql://")
-        connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
+
+        connect_args: dict[str, Any] = {}
+        engine_options: dict[str, Any] = {"future": True, "pool_pre_ping": True}
+        if url.startswith("sqlite"):
+            connect_args["check_same_thread"] = False
+            # An in-memory SQLite database must share one connection across
+            # FastAPI/Starlette worker threads during API tests.
+            if url in {"sqlite://", "sqlite:///:memory:"}:
+                engine_options["poolclass"] = StaticPool
         if url.startswith("postgresql+"):
             connect_args["sslmode"] = "require"
-        self.engine = create_engine(url, future=True, pool_pre_ping=True, connect_args=connect_args)
+
+        self.engine = create_engine(url, connect_args=connect_args, **engine_options)
         self.Session = sessionmaker(bind=self.engine, autoflush=False, autocommit=False, expire_on_commit=False)
 
     def initialize(self) -> None:
