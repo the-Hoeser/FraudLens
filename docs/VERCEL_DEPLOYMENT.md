@@ -9,7 +9,7 @@ Create a Vercel project from the GitHub repository `the-Hoeser/FraudLens`.
 | Root Directory | `frontend` |
 | Framework Preset | TanStack Start |
 | Node.js | 22.x |
-| Install Command | `bun install --frozen-lockfile` |
+| Install Command | `bun install` |
 | Build Command | `bun run build` |
 
 The directory contains `vercel.json`, which declares the `tanstack-start` framework. Vite builds the app with the official TanStack Start plugin and Nitro's Vercel deployment adapter.
