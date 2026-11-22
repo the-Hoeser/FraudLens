@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FraudLens AI · API Test Bench</title>
+<style>
+:root{color-scheme:dark;--bg:#07111f;--panel:#0d1b2c;--panel2:#10233a;--line:#1e3853;--text:#e8f1fb;--muted:#9cb2c9;--blue:#63b3ff;--teal:#48d6c1;--red:#ff7b83;--amber:#ffc66d}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0%,#133354 0,transparent 42%),var(--bg);color:var(--text);font:14px/1.5 Inter,ui-sans-serif,system-ui,Segoe UI,Arial,sans-serif}
+main{max-width:1100px;margin:0 auto;padding:34px 22px 72px}.top{display:flex;justify-content:space-between;gap:24px;align-items:flex-start;margin-bottom:26px}.eyebrow{color:var(--teal);font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase}.title{font-size:32px;font-weight:750;letter-spacing:-.04em;margin:5px 0}.sub{color:var(--muted);max-width:660px}.pill{border:1px solid #345573;border-radius:999px;padding:5px 10px;color:var(--blue);font-size:11px;white-space:nowrap}
+.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}.card{background:linear-gradient(160deg,rgba(17,39,62,.96),rgba(9,23,39,.98));border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 16px 40px #0002}.card h2{font-size:15px;margin:0 0 4px}.hint{color:var(--muted);font-size:12px;margin:0 0 14px}.row{display:flex;gap:10px;align-items:center}.stack{display:grid;gap:10px}.field{width:100%;border:1px solid #31506c;border-radius:8px;background:#071624;color:var(--text);padding:10px 12px;outline:none}.field:focus{border-color:var(--blue);box-shadow:0 0 0 3px #63b3ff22}button{border:0;border-radius:8px;background:var(--blue);color:#06121e;font-weight:700;padding:10px 14px;cursor:pointer}button.secondary{background:#1b3854;color:var(--text);border:1px solid #31506c}button:disabled{opacity:.45;cursor:not-allowed}.status{padding:10px 12px;border:1px solid var(--line);border-radius:8px;color:var(--muted);background:#081827}.status.ok{color:var(--teal);border-color:#27685f}.status.bad{color:var(--red);border-color:#743e48}.status.warn{color:var(--amber);border-color:#71552e}.drop{border:1px dashed #41627f;border-radius:10px;padding:20px;background:#071a2a;text-align:center}.drop input{display:block;margin:14px auto 0;max-width:100%}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.metric{background:#091827;border:1px solid var(--line);border-radius:9px;padding:11px}.metric strong{font-size:19px;display:block}.metric span{color:var(--muted);font-size:11px}.wide{grid-column:1/-1}.bar{height:7px;border-radius:99px;background:#1b344d;overflow:hidden}.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--blue),var(--teal));width:0}.tablewrap{overflow:auto;max-height:360px;border:1px solid var(--line);border-radius:8px}table{border-collapse:collapse;width:100%;font-size:12px;white-space:nowrap}th,td{text-align:left;padding:9px 11px;border-bottom:1px solid #1a344d}th{position:sticky;top:0;background:#112940;color:var(--muted);font-weight:600}td.num{text-align:right;font-variant-numeric:tabular-nums}.small{font-size:11px;color:var(--muted)}.hidden{display:none!important}.foot{margin-top:20px;color:#8099b2;font-size:11px}.foot a{color:var(--blue)}@media(max-width:760px){.grid{grid-template-columns:1fr}.top{display:block}.pill{display:inline-block;margin-top:12px}.title{font-size:27px}}
+</style>
+</head>
+<body>
+<main>
+  <header class="top">
+    <div><div class="eyebrow">FraudLens AI · Test environment</div><h1 class="title">Backend test bench</h1><p class="sub">Connect to the FastAPI service, inspect actual model status, validate the ULB feature schema, then submit a CSV and follow the real analysis job. This page never generates demo predictions.</p></div>
+    <span class="pill">API smoke test · 300 MiB client limit</span>
+  </header>
+
+  <div class="grid">
+    <section class="card">
+      <h2>1 · API connection</h2><p class="hint">Enter the deployed API root. For local testing use http://localhost:8000.</p>
+      <div class="stack">
+        <div class="row"><input id="apiUrl" class="field" placeholder="https://your-fraudlens-api.onrender.com"><button id="connect">Connect</button></div>
+        <div id="health" class="status">Not connected. Add an API URL and press Connect.</div>
+        <div class="small" id="healthDetail">The service should expose /health and /docs.</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>2 · Model evaluation</h2><p class="hint">Only metrics returned by the backend are displayed.</p>
+      <div id="metrics" class="status">Connect to the backend to load the evaluation report.</div>
+      <div id="metricGrid" class="metrics hidden" style="margin-top:10px"></div>
+    </section>
+
+    <section class="card wide">
+      <h2>3 · Upload the benchmark CSV</h2>
+      <p class="hint">Schema: Time, V1–V28, Amount, optional Class. File limit: 300 MiB; row limit: 300,000. Do not upload cardholder names, PANs, CVVs, account IDs or other personal data.</p>
+      <div class="drop">
+        <strong>Choose creditcard.csv</strong>
+        <div class="small">ULB / Kaggle Credit Card Fraud Detection benchmark · 284,807 rows</div>
+        <input id="file" type="file" accept=".csv,text/csv">
+      </div>
+      <div id="fileInfo" class="status" style="margin-top:12px">No file selected.</div>
+      <div id="validation" class="status hidden" style="margin-top:10px"></div>
+      <div class="row" style="justify-content:flex-end;margin-top:12px"><button id="submit" disabled>Submit analysis</button></div>
+    </section>
+
+    <section class="card wide hidden" id="jobCard">
+      <h2>4 · Analysis job</h2><p class="hint" id="jobId"></p>
+      <div class="row" style="justify-content:space-between"><strong id="jobStatus">Queued</strong><span class="small" id="jobCount">0 / 0 rows</span></div>
+      <div class="bar" style="margin:10px 0 16px"><i id="progress"></i></div>
+      <div class="metrics" id="jobMetrics"></div>
+      <div id="jobError" class="status hidden" style="margin-top:12px"></div>
+      <div style="margin-top:16px"><h2>Prediction preview</h2><p class="hint">First 500 rows returned by the API job. Full transaction records are persisted by the backend.</p>
+        <div class="tablewrap"><table><thead><tr><th>Row</th><th>Transaction ID</th><th>Prediction</th><th>Fraud score</th><th>Risk</th></tr></thead><tbody id="results"></tbody></table></div>
+      </div>
+    </section>
+  </div>
+  <p class="foot">Educational benchmark only; do not use this system to approve, decline or investigate live payments. <a href="https://github.com/the-Hoeser/FraudLens" target="_blank" rel="noreferrer">Source repository</a> · <a href="https://lovable.dev/projects/0c85117c-186d-40a5-a7e5-c54f5cdc98f7" target="_blank" rel="noreferrer">Lovable UI project</a></p>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const LIMIT_BYTES = 300 * 1024 * 1024;
+const LIMIT_ROWS = 300000;
+let apiBase = "";
+let selectedFile = null;
+let validFile = false;
+const columns = ["Time", ...Array.from({length:28},(_,i)=>"V"+(i+1)), "Amount"];
+const allowed = new Set([...columns,"Class"]);
+function setStatus(node, text, tone="") { node.className = "status " + tone; node.textContent = text; }
+function baseUrl(){ return $("apiUrl").value.trim().replace(/\/+$/,""); }
+function parseCsvLine(line){
+  const cells=[]; let field="", quoted=false;
+  for(let i=0;i<line.length;i++){
+    const c=line[i];
+    if(quoted){ if(c==='"'&&line[i+1]==='"'){field+='"';i++;} else if(c==='"') quoted=false; else field+=c; }
+    else if(c==='"') quoted=true;
+    else if(c===','){cells.push(field);field="";}
+    else field+=c;
+  }
+  cells.push(field); return cells;
+}
+async function validateFile(file){
+  const result={valid:false,rows:0,errors:[],headers:[]};
+  if(file.size>LIMIT_BYTES){result.errors.push("File exceeds 300 MiB.");return result;}
+  const reader=file.stream().getReader(), decoder=new TextDecoder("utf-8",{fatal:true});
+  let pending="", headers=null;
+  const add=(s)=>{if(result.errors.length<20)result.errors.push(s);};
+  const process=(raw)=>{
+    const line=raw.replace(/\r$/,""); if(!line.trim())return;
+    const cells=parseCsvLine(line);
+    if(headers===null){
+      headers=cells.map(v=>v.trim().replace(/^\uFEFF/,"")); result.headers=headers;
+      const missing=columns.filter(x=>!headers.includes(x));
+      const extra=headers.filter(x=>!allowed.has(x));
+      if(missing.length)add("Missing columns: "+missing.join(", "));
+      if(extra.length)add("Unexpected columns: "+extra.join(", "));
+      if(new Set(headers).size!==headers.length)add("Duplicate column headers.");
+      return;
+    }
+    result.rows++;
+    if(result.rows>LIMIT_ROWS){add("Row limit 300,000 exceeded.");return;}
+    if(cells.length!==headers.length){add("Row "+result.rows+" has a column-count mismatch.");return;}
+    for(let i=0;i<headers.length;i++){
+      const name=headers[i], rawValue=cells[i].trim(), value=Number(rawValue);
+      if(rawValue===""||!Number.isFinite(value)){add("Row "+result.rows+", "+name+": missing or non-numeric value.");break;}
+      if((name==="Time"||name==="Amount")&&value<0){add("Row "+result.rows+", "+name+": negative value.");break;}
+      if(name==="Class"&&value!==0&&value!==1){add("Row "+result.rows+": Class must be 0 or 1.");break;}
+    }
+  };
+  try{
+    while(true){
+      const {value,done}=await reader.read(); if(done)break;
+      pending+=decoder.decode(value,{stream:true});
+      const lines=pending.split("\n"); pending=lines.pop()??"";
+      for(const line of lines)process(line);
+      if(result.rows>LIMIT_ROWS||result.errors.length>=20)break;
+    }
+    pending+=decoder.decode(); if(pending)process(pending);
+  }catch(e){add("CSV is not valid UTF-8.");}
+  finally{await reader.cancel().catch(()=>{});}
+  if(headers===null)add("No header row found.");
+  else if(result.rows===0)add("No data rows found.");
+  result.valid=result.errors.length===0;
+  return result;
+}
+$("connect").onclick=async()=>{
+  apiBase=baseUrl(); if(!apiBase){setStatus($("health"),"Enter an API URL.","bad");return;}
+  localStorage.setItem("fraudlens_api_url",apiBase);
+  setStatus($("health"),"Connecting…");
+  try{
+    const r=await fetch(apiBase+"/health"); if(!r.ok)throw new Error("HTTP "+r.status);
+    const h=await r.json();
+    setStatus($("health"),"API healthy · database "+h.database+" · model "+(h.model_loaded?"loaded":"not trained"),"ok");
+    $("healthDetail").textContent="Version "+h.version+" · "+h.timestamp;
+    await loadMetrics();
+  }catch(e){setStatus($("health"),"Connection failed: "+e.message,"bad");$("healthDetail").textContent="Check API URL and CORS settings.";}
+};
+async function loadMetrics(){
+  try{
+    const r=await fetch(apiBase+"/api/model/metrics"); const data=await r.json();
+    if(data.status!=="evaluated"){setStatus($("metrics"),data.reason||"Model has not been evaluated.","warn");$("metricGrid").classList.add("hidden");return;}
+    setStatus($("metrics"),"Evaluation loaded from backend · split: "+data.split,"ok");
+    $("metricGrid").classList.remove("hidden");
+    $("metricGrid").innerHTML=["precision","recall","f1","pr_auc","roc_auc"].map(k=>'<div class="metric"><strong>'+Number(data.metrics[k]).toFixed(4)+'</strong><span>'+k.replace("_"," ").toUpperCase()+'</span></div>').join("");
+  }catch(e){setStatus($("metrics"),"Metrics unavailable: "+e.message,"bad");}
+}
+$("file").onchange=async()=>{
+  selectedFile=$("file").files[0]||null; validFile=false; $("submit").disabled=true;
+  $("validation").classList.remove("hidden");
+  if(!selectedFile){setStatus($("fileInfo"),"No file selected.");$("validation").classList.add("hidden");return;}
+  setStatus($("fileInfo"),selectedFile.name+" · "+(selectedFile.size/1024/1024).toFixed(1)+" MiB");
+  setStatus($("validation"),"Streaming validation…");
+  const result=await validateFile(selectedFile);
+  if(result.valid){validFile=true;$("submit").disabled=!apiBase;setStatus($("validation"),"Schema valid · "+result.rows.toLocaleString()+" rows · "+result.headers.length+" columns","ok");}
+  else setStatus($("validation"),result.errors.join(" "), "bad");
+};
+$("submit").onclick=async()=>{
+  if(!apiBase||!selectedFile||!validFile)return;
+  $("submit").disabled=true;setStatus($("validation"),"Uploading to backend…");
+  try{
+    const form=new FormData();form.append("file",selectedFile,selectedFile.name);
+    const response=await fetch(apiBase+"/api/analyze",{method:"POST",body:form});
+    const data=await response.json();
+    if(!response.ok)throw new Error(data.error?.message||"HTTP "+response.status);
+    $("jobCard").classList.remove("hidden");$("jobId").textContent="Job "+data.job_id;
+    await pollJob(data.job_id);
+  }catch(e){setStatus($("validation"),"Upload failed: "+e.message,"bad");$("submit").disabled=false;}
+};
+async function pollJob(id){
+  let finished=false;
+  while(!finished){
+    const r=await fetch(apiBase+"/api/analyze/"+encodeURIComponent(id));
+    const job=await r.json(); if(!r.ok)throw new Error(job.error?.message||"Job status failed");
+    $("jobStatus").textContent=job.status.toUpperCase();
+    $("jobCount").textContent=job.processed_count.toLocaleString()+" / "+job.row_count.toLocaleString()+" rows";
+    $("progress").style.width=(job.row_count?100*job.processed_count/job.row_count:0)+"%";
+    if(job.summary){
+      $("jobMetrics").innerHTML=[
+        ["Flagged",job.summary.flagged_count.toLocaleString()],
+        ["Flagged amount",Number(job.summary.flagged_amount).toFixed(2)],
+        ["Flag rate",(100*job.summary.fraud_rate).toFixed(3)+"%"],
+        ["Model",job.model_version||"—"]
+      ].map(([a,b])=>'<div class="metric"><strong>'+b+'</strong><span>'+a+'</span></div>').join("");
+    }
+    if(job.error){$("jobError").classList.remove("hidden");setStatus($("jobError"),job.error.message,"bad");}
+    if(job.results){
+      $("results").innerHTML=job.results.map(x=>'<tr><td>'+x.row_index+'</td><td>'+x.transaction_id+'</td><td>'+x.prediction+'</td><td class="num">'+(100*x.fraud_probability).toFixed(2)+'%</td><td>'+x.risk_tier+'</td></tr>').join("");
+    }
+    finished=job.status==="completed"||job.status==="failed";
+    if(!finished)await new Promise(resolve=>setTimeout(resolve,1800));
+  }
+}
+$("apiUrl").value=localStorage.getItem("fraudlens_api_url")||"";
+if($("apiUrl").value)$("connect").click();
+</script>
+</body>
+</html>
