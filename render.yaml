@@ -11,7 +11,7 @@ services:
       - key: CORS_ORIGINS
         value: "https://fraud-lens.vercel.app,https://fraudlens-ai.vercel.app,https://the-hoeser.github.io,http://localhost:5173,http://127.0.0.1:5173"
       - key: CORS_ORIGIN_REGEX
-        value: "^https://fraudlens-ai(?:-[a-z0-9-]+)*\\.vercel\\.app$"
+        value: "^https://(?:fraud-lens|fraudlens-ai)(?:-[a-z0-9-]+)*\\.vercel\\.app$"
       - key: MODEL_DIR
         value: ./artifacts
       - key: MAX_UPLOAD_BYTES
