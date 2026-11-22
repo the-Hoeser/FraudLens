@@ -1,17 +1,25 @@
 # FraudLens AI
 
-Educational credit-card fraud detection and analytics. The Lovable UI is maintained in the [Lovable project](https://lovable.dev/projects/0c85117c-186d-40a5-a7e5-c54f5cdc98f7); this repository contains the Python API, training pipeline, deployment configuration and Supabase schema.
+Educational credit-card fraud detection and analytics. The Lovable UI is maintained in the [Lovable project](https://lovable.dev/projects/0c85117c-186d-40a5-a7e5-c54f5cdc98f7). This repository contains the FastAPI backend, ML pipeline, Supabase schema/migrations, upload patch, test bench and deployment configuration.
 
-## Current status
+## Links
 
-- FastAPI backend source and ML training/evaluation pipeline are in `backend/`.
-- Backend upload configuration: **300 MiB** and **300,000 rows**, streamed to disk and validated in 50,000-row chunks.
-- Lovable's current browser-side CSV validator is still **10 MiB / 50,000 rows**. The streaming 300 MiB patch is in `scripts/patch_lovable_uploads.py`; it must be applied to an exported frontend source tree before the Lovable UI can accept the larger file.
-- Dedicated Supabase project: [FraudLens AI](https://supabase.com/dashboard/project/oguoloekvtetjhjziiir), Mumbai region. The `analysis_jobs` and `transactions` tables are installed with RLS and deny-by-default browser policies. Backend persistence requires a server-only `DATABASE_URL`.
-- The canonical Kaggle CSV is not included in Git. The ULB file is about 150.8 MB, so it is below the configured backend 300 MiB limit. It must be downloaded separately and never committed.
-- No real-data performance results are claimed until the exact dataset has been trained and evaluated.
+- **GitHub:** https://github.com/the-Hoeser/FraudLens
+- **Lovable editor:** https://lovable.dev/projects/0c85117c-186d-40a5-a7e5-c54f5cdc98f7
+- **Lovable preview:** https://id-preview--0c85117c-186d-40a5-a7e5-c54f5cdc98f7.lovable.app
+- **API test bench (after GitHub Pages deploy):** https://the-hoeser.github.io/FraudLens/
+- **Render API setup:** https://render.com/deploy?repo=https://github.com/the-Hoeser/FraudLens
+- **Supabase:** https://supabase.com/dashboard/project/oguoloekvtetjhjziiir
 
-## Local setup
+## Current upload limit status
+
+- **FastAPI backend:** 300 MiB / 300,000 rows, streamed to disk and validated in 50,000-row chunks.
+- **Lovable browser UI:** still 10 MiB / 50,000 rows until an exported frontend source tree is patched and synced into Lovable. The patch script is included in `scripts/patch_lovable_uploads.py`.
+- **API host:** request-size limits are provider-specific. Render is the intended API host; verify the deployed service accepts the full 150.8 MB benchmark file before relying on browser uploads. Vercel Functions are not used for this API route.
+
+Therefore the upload size is **not yet extended end-to-end**. Backend setting is already raised; the original Lovable UI still blocks files over 10 MiB.
+
+## Local backend
 
 Python 3.11 is recommended.
 
@@ -25,14 +33,14 @@ cp .env.example .env
 uvicorn app.main:app --reload --port 8000
 ```
 
-- API health: http://localhost:8000/health
-- Interactive API docs: http://localhost:8000/docs
+- Health: http://localhost:8000/health
+- Swagger / API docs: http://localhost:8000/docs
 
-## Download and train
+## Dataset and training
 
-Dataset: https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud
+Source: https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud
 
-After accepting Kaggle's dataset terms and configuring the Kaggle CLI:
+The canonical file has 284,807 rows, 492 fraud labels, 284,315 legitimate labels and 31 columns (Time, V1–V28, Amount, Class). It is not committed to this repository. Accept Kaggle's terms and configure Kaggle CLI credentials first.
 
 ```bash
 # From repository root
@@ -42,29 +50,28 @@ cd backend
 python -m app.ml.train --data data/raw/creditcard.csv
 ```
 
-Training creates `backend/artifacts/model.joblib`, `model_info.json`, `metrics.json` and threshold/comparison reports. The split is stratified 70/15/15. Candidate selection and threshold tuning use validation data; the test split is used once for final evaluation. Metrics include precision, recall, F1, PR-AUC, ROC-AUC and a confusion matrix. Accuracy is not treated as the primary metric.
+The training pipeline uses stratified 70/15/15 splits, compares class-weighted Logistic Regression and Random Forest on validation PR-AUC, selects the threshold on validation F1, and evaluates the held-out test split once. It reports precision, recall, F1, PR-AUC, ROC-AUC and a confusion matrix. No real-data results are claimed until this training command has run on the actual CSV.
 
-## Deployment / test environment
+## Deployment and Supabase
 
-`render.yaml` defines a Docker-based Render web service for the FastAPI backend. Open [Render](https://dashboard.render.com/) and create a Blueprint from this repository. Set the following secrets/configuration in the service:
+`render.yaml` defines a Docker-based Render web service. Open the Render Blueprint link above and configure:
 
-- `DATABASE_URL`: Supabase Postgres connection string (server-side secret only).
-- `CORS_ORIGINS`: exact Lovable preview/published origins.
+- `DATABASE_URL`: server-side Supabase Postgres connection string.
+- `CORS_ORIGINS`: exact Lovable preview/published origin and test-bench origin.
 - `MAX_UPLOAD_BYTES=314572800`
 - `MAX_UPLOAD_ROWS=300000`
 
-Then verify `/health` and `/docs`. The hosting proxy's body-size limit and service memory must be verified with the actual 150.8 MB CSV; application-level limits alone do not override hosting limits.
+Supabase project `FraudLens AI` is already provisioned in Mumbai; `analysis_jobs` and `transactions` tables are installed, RLS is enabled, and browser-deny policies are applied. Do not put database credentials or service-role keys in browser variables.
 
-## Upload architecture
-
-The current backend accepts up to 300 MiB/300,000 rows and streams the multipart request to a temporary file before chunk validation. The current Lovable frontend still rejects uploads over 10 MiB before they reach the server. Apply the included patch to a local export of the Lovable source:
+## Tests
 
 ```bash
-python scripts/patch_lovable_uploads.py /path/to/exported-lovable-project
+cd backend
+PYTHONPATH=. python -m pytest -q
 ```
 
-That patch changes the browser limit to 300 MiB / 300,000 rows and validates via `File.stream()`, rather than `File.text()`. It does not change the hosted Lovable preview until the patched source is committed/synced back into Lovable.
+A synthetic test suite validates API contracts, CSV schema, no-model behavior and training logic. Synthetic tests are not a substitute for the real Kaggle benchmark.
 
-## Security and scope
+## Important limitations
 
-Never expose Supabase database passwords or service-role keys in `VITE_*` variables. Do not upload PANs, card numbers, names, CVVs, account IDs, or real customer data. This is a learning/benchmark application, not a production payment decision system.
+This is an educational benchmark, not a production fraud platform. The dataset covers two days of European card activity in September 2013; V1–V28 are anonymized PCA features. Do not upload personal or payment-card data. A model score is not proof of fraud and must not be used to approve or decline real payments.
