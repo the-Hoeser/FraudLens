@@ -82,7 +82,7 @@ The root `render.yaml` defines a Docker web service. Create a Blueprint from thi
 - `MAX_UPLOAD_BYTES=314572800`
 - `MAX_UPLOAD_ROWS=300000`
 
-CORS is configured for the Vercel production alias, project-specific Vercel preview URLs and local development. The backend health endpoint reports whether it is using PostgreSQL or SQLite. Production should report `database=connected` and `database_provider=postgresql`.
+CORS is configured for the `fraud-lens` and `fraudlens-ai` Vercel project URL prefixes, plus local development. Confirm the assigned production domain and add it to `CORS_ORIGINS` if it differs. The backend health endpoint reports whether it is using PostgreSQL or SQLite. Production should report `database=connected` and `database_provider=postgresql`.
 
 The Supabase schema is in `supabase/schema.sql`; the dedicated project already has `analysis_jobs` and `transactions` tables with RLS enabled and browser access denied.
 
