@@ -16,7 +16,7 @@ import { isApiConfigured } from "@/lib/api/config";
 import { csvIssuesFrom, describeError, isApiError } from "@/lib/api/errors";
 import type { AnalysisJob } from "@/lib/api/types";
 import { downloadTextFile, generateSampleCsv } from "@/lib/csv/sample";
-import { MAX_UPLOAD_BYTES, MAX_UPLOAD_ROWS, validateCsvText, type CsvValidationResult } from "@/lib/csv/schema";
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_ROWS, validateCsvFile, type CsvValidationResult } from "@/lib/csv/schema";
 import { formatAmount, formatInt, formatPercent } from "@/lib/format";
 
 export const Route = createFileRoute("/analyze")({
@@ -60,8 +60,7 @@ function AnalyzePage() {
     }
     setReading(true);
     try {
-      const text = await f.text();
-      setValidation(validateCsvText(text, f.size));
+      setValidation(await validateCsvFile(f));
     } finally {
       setReading(false);
     }
