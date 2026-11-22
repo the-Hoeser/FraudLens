@@ -1,16 +1,18 @@
 # FraudLens frontend
 
-Lovable-generated React + TypeScript + TanStack Start frontend source.
+Lovable-generated React + TypeScript + TanStack Start frontend.
 
 ## Local development
 
 ```bash
-cd frontend
 bun install
 cp .env.example .env
+# Set VITE_API_BASE_URL=http://localhost:8000 in .env
 bun run dev
 ```
 
-The API base URL is configured with `VITE_API_BASE_URL`. This is a public browser URL, not a secret. It should point to the deployed FastAPI web service. Never put `DATABASE_URL`, Supabase service-role or database credentials in a VITE variable.
+The GitHub source copy has been updated to a 300 MiB / 300,000-row browser-side limit using streaming `File.stream()` validation. The currently hosted Lovable preview has not synced this change yet: its project still reports an older commit and a 10 MiB / 50,000-row validator.
 
-The current Lovable source still has a 10 MiB / 50,000-row client-side CSV limit. The backend is configured for 300 MiB / 300,000 rows. Apply the repository root script to an exported copy of this frontend to switch the UI to chunked `File.stream()` validation, then sync the patched source into Lovable before using the higher limit from the main app.
+To apply this source to the hosted project, connect `the-Hoeser/FraudLens` / `main` under Lovable Project Settings → Git and synchronize the source. Then retest the hosted Analyze page before treating the full upload limit as active there.
+
+`VITE_API_BASE_URL` is a public URL only. Never put `DATABASE_URL`, database passwords or Supabase service-role credentials in a browser-visible variable.

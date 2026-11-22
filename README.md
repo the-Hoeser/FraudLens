@@ -1,27 +1,44 @@
 # FraudLens AI
 
-Educational credit-card fraud detection and analytics. The Lovable UI is maintained in the [Lovable project](https://lovable.dev/projects/0c85117c-186d-40a5-a7e5-c54f5cdc98f7). This repository contains the FastAPI backend, ML pipeline, Supabase schema/migrations, upload patch, test bench and deployment configuration.
+Educational credit-card fraud detection and analytics. This repository now contains the Lovable React/TypeScript frontend source under `frontend/`, a Python FastAPI backend under `backend/`, Supabase schema/migrations, a browser API test bench, CI, and deployment configuration.
 
 ## Links
 
-- **GitHub:** https://github.com/the-Hoeser/FraudLens
+- **GitHub repository:** https://github.com/the-Hoeser/FraudLens
 - **Lovable editor:** https://lovable.dev/projects/0c85117c-186d-40a5-a7e5-c54f5cdc98f7
 - **Lovable preview:** https://id-preview--0c85117c-186d-40a5-a7e5-c54f5cdc98f7.lovable.app
-- **API test bench (after GitHub Pages deploy):** https://the-hoeser.github.io/FraudLens/
-- **Render API setup:** https://render.com/deploy?repo=https://github.com/the-Hoeser/FraudLens
-- **Supabase:** https://supabase.com/dashboard/project/oguoloekvtetjhjziiir
+- **API test bench (after Pages is enabled):** https://the-hoeser.github.io/FraudLens/
+- **Render Blueprint:** https://render.com/deploy?repo=https://github.com/the-Hoeser/FraudLens
+- **Supabase project:** https://supabase.com/dashboard/project/oguoloekvtetjhjziiir
 
-## Current upload limit status
+## Upload limit — exact current state
 
-- **FastAPI backend:** 300 MiB / 300,000 rows, streamed to disk and validated in 50,000-row chunks.
-- **Lovable browser UI:** still 10 MiB / 50,000 rows until an exported frontend source tree is patched and synced into Lovable. The patch script is included in `scripts/patch_lovable_uploads.py`.
-- **API host:** request-size limits are provider-specific. Render is the intended API host; verify the deployed service accepts the full 150.8 MB benchmark file before relying on browser uploads. Vercel Functions are not used for this API route.
+| Layer | Limit | Status |
+|---|---:|---|
+| FastAPI backend source | 300 MiB / 300,000 rows | Configured |
+| GitHub `frontend/` source | 300 MiB / 300,000 rows | Patched with streaming `File.stream()` validation |
+| Standalone `testbed/` page | 300 MiB / 300,000 rows | Patched with streaming validation |
+| Hosted Lovable preview | 10 MiB / 50,000 rows | **Not yet synced** |
+| Deployed API host | Must be verified | Render service not deployed yet |
 
-Therefore the upload size is **not yet extended end-to-end**. Backend setting is already raised; the original Lovable UI still blocks files over 10 MiB.
+I verified that the Lovable project's latest commit is still its earlier scaffold commit and its `src/lib/csv/schema.ts` still declares 10 MiB / 50,000 rows. The source copy in this repository has been updated, but it has not yet synced back into the hosted Lovable project. Connect this repository/branch to the Lovable project's **Settings → Git** and sync `main`; then verify the deployed preview's new limit.
 
-## Local backend
+The backend's application-level limit is 300 MiB. This does not prove that a hosting proxy will accept a 150.8 MB request. The actual Kaggle file upload must be tested after the API service is deployed.
 
-Python 3.11 is recommended.
+## Repository structure
+
+- `frontend/` — Lovable React + TypeScript + TanStack Start source; run separately from its directory.
+- `backend/` — FastAPI, SQLAlchemy persistence, CSV validation, inference and ML training.
+- `testbed/` — standalone HTML page to test API health, metrics, streaming file validation, uploads and jobs.
+- `supabase/` — SQL schema and applied migrations.
+- `docs/` — data, model evaluation, security, Supabase and upload notes.
+- `scripts/` — Kaggle download/integrity-check scripts and Lovable upload patch utility.
+
+## Run locally
+
+### Backend
+
+Python 3.11 recommended:
 
 ```bash
 cd backend
@@ -34,13 +51,41 @@ uvicorn app.main:app --reload --port 8000
 ```
 
 - Health: http://localhost:8000/health
-- Swagger / API docs: http://localhost:8000/docs
+- API docs: http://localhost:8000/docs
+
+### Frontend
+
+```bash
+cd frontend
+bun install
+cp .env.example .env
+# Set VITE_API_BASE_URL=http://localhost:8000 in .env
+bun run dev
+```
+
+Do not put database passwords or service-role keys in a `VITE_*` variable.
+
+## Test environment setup
+
+1. **API:** Open the Render Blueprint link above, connect this repository, create the web service from `render.yaml`, and configure the secrets below.
+2. **Pages:** Open repository **Settings → Pages**, set Source to **GitHub Actions**, and save. Then open **Actions → Deploy API test bench to GitHub Pages → Run workflow**. The workflow is manual because the first attempt could not create the Pages site with its automation token.
+3. **Test bench:** After the Pages workflow succeeds, open https://the-hoeser.github.io/FraudLens/ and enter the deployed API base URL.
+4. **Health:** Verify `/health` returns `status=ok`, `database=connected`, and check whether a trained model is loaded.
+5. **Large file:** upload the actual Kaggle CSV; verify that the hosting ingress accepts it and the job completes before treating the upload limit as end-to-end.
+
+Render environment variables:
+- `DATABASE_URL`: Supabase Postgres connection string (server-only secret).
+- `CORS_ORIGINS`: exact Lovable preview origin and `https://the-hoeser.github.io`.
+- `MAX_UPLOAD_BYTES=314572800`
+- `MAX_UPLOAD_ROWS=300000`
+
+The Render service has not yet been provisioned from the Blueprint, and no `DATABASE_URL` secret has been set there. Supabase's dedicated Mumbai project and database schema are already provisioned; backend persistence becomes active after this server-side secret is configured.
 
 ## Dataset and training
 
 Source: https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud
 
-The canonical file has 284,807 rows, 492 fraud labels, 284,315 legitimate labels and 31 columns (Time, V1–V28, Amount, Class). It is not committed to this repository. Accept Kaggle's terms and configure Kaggle CLI credentials first.
+Expected canonical data: 284,807 rows, 492 fraud labels, 284,315 legitimate labels and 31 columns (Time, V1–V28, Amount, Class). The CSV is not committed to Git. Accept the Kaggle terms and configure Kaggle CLI credentials, then run:
 
 ```bash
 # From repository root
@@ -50,28 +95,18 @@ cd backend
 python -m app.ml.train --data data/raw/creditcard.csv
 ```
 
-The training pipeline uses stratified 70/15/15 splits, compares class-weighted Logistic Regression and Random Forest on validation PR-AUC, selects the threshold on validation F1, and evaluates the held-out test split once. It reports precision, recall, F1, PR-AUC, ROC-AUC and a confusion matrix. No real-data results are claimed until this training command has run on the actual CSV.
+The training pipeline uses stratified 70/15/15 splits, compares class-weighted Logistic Regression and Random Forest using validation PR-AUC, selects the threshold using validation F1, and evaluates the held-out test set once. It reports precision, recall, F1, PR-AUC, ROC-AUC and confusion matrix. No real-data performance results are claimed yet.
 
-## Deployment and Supabase
+## Supabase
 
-`render.yaml` defines a Docker-based Render web service. Open the Render Blueprint link above and configure:
+Dedicated project: https://supabase.com/dashboard/project/oguoloekvtetjhjziiir
 
-- `DATABASE_URL`: server-side Supabase Postgres connection string.
-- `CORS_ORIGINS`: exact Lovable preview/published origin and test-bench origin.
-- `MAX_UPLOAD_BYTES=314572800`
-- `MAX_UPLOAD_ROWS=300000`
+Tables `analysis_jobs` and `transactions` are installed. RLS is enabled; browser table access is denied. The FastAPI host should use the database connection string as a server-only secret.
 
-Supabase project `FraudLens AI` is already provisioned in Mumbai; `analysis_jobs` and `transactions` tables are installed, RLS is enabled, and browser-deny policies are applied. Do not put database credentials or service-role keys in browser variables.
+## CI
 
-## Tests
+Backend CI runs on pushes to `main` and pull requests. The in-memory SQLite test fixture uses a shared `StaticPool` to work across the API worker thread. See Actions for the current check status.
 
-```bash
-cd backend
-PYTHONPATH=. python -m pytest -q
-```
+## Scope and limitations
 
-A synthetic test suite validates API contracts, CSV schema, no-model behavior and training logic. Synthetic tests are not a substitute for the real Kaggle benchmark.
-
-## Important limitations
-
-This is an educational benchmark, not a production fraud platform. The dataset covers two days of European card activity in September 2013; V1–V28 are anonymized PCA features. Do not upload personal or payment-card data. A model score is not proof of fraud and must not be used to approve or decline real payments.
+This is an educational benchmark, not a production payment decision system. The public dataset covers two days of European card activity in September 2013; V1–V28 are anonymized PCA components. Do not upload real customer records, PANs, CVVs, names or account IDs.
