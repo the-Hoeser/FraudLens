@@ -28,7 +28,7 @@ The FastAPI host must allow the Netlify production and deploy-preview origins in
 
 The repository-root `netlify.toml` configures the existing site:
 
-- Netlify project: `fraudlens-ai-lsou`
+- Netlify project: `fraudylens-ai`
 - Site URL: `https://fraudlens-ai-lsou.netlify.app`
 - Base directory: `frontend`
 - Build command: `bun install && bun run build`
@@ -38,7 +38,7 @@ The repository-root `netlify.toml` configures the existing site:
 
 The Vite configuration uses `@netlify/vite-plugin-tanstack-start`. TanStack Start SSR, server routes, server functions and middleware are deployed as Netlify Functions. Do not add a static SPA fallback rewrite; it would interfere with SSR routes.
 
-The Netlify project has been created. Link the GitHub repository `the-Hoeser/FraudLens` in the Netlify dashboard to enable continuous deployment.
+The production deployment is live. Verify the `main` branch remains the production branch in Netlify.
 
 ## CSV upload
 
