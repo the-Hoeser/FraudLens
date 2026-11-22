@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { isApiConfigured } from "@/lib/api/config";
 import { modelInfoQuery } from "@/lib/data/source";
-import type { ModelInfo } from "@/lib/api/types";
+import type { ModelInfo, ModelInfoResponse } from "@/lib/api/types";
 import { formatDateTime, formatInt, formatPercent } from "@/lib/format";
 
 export const Route = createFileRoute("/registry")({
@@ -21,9 +21,14 @@ export const Route = createFileRoute("/registry")({
   component: RegistryPage,
 });
 
+function isNotTrainedModel(value: ModelInfoResponse): value is Extract<ModelInfoResponse, { status: "not_trained" }> {
+  return "status" in value && value.status === "not_trained";
+}
+
 function RegistryPage() {
   const configured = isApiConfigured();
   const query = useQuery(modelInfoQuery());
+  const modelInfo = query.data;
 
   return (
     <div className="space-y-6">
@@ -41,14 +46,14 @@ function RegistryPage() {
         </div>
       ) : query.isError ? (
         <ErrorState error={query.error} onRetry={() => void query.refetch()} />
-      ) : query.data && "status" in query.data && query.data.status === "not_trained" ? (
+      ) : modelInfo && isNotTrainedModel(modelInfo) ? (
         <EmptyState
           icon={<FlaskConical className="size-5" aria-hidden />}
           title="No trained model registered"
-          description={query.data.reason}
+          description={modelInfo.reason}
         />
-      ) : query.data ? (
-        <RegistryDetails model={query.data} />
+      ) : modelInfo ? (
+        <RegistryDetails model={modelInfo} />
       ) : null}
     </div>
   );
