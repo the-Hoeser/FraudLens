@@ -22,7 +22,7 @@ For Vercel, add these environment variables under **Project → Settings → Env
 
 Because `VITE_*` values are included in the browser bundle, only put a public API URL in this variable. Re-deploy after changing a Vercel environment variable.
 
-The FastAPI host must allow the Vercel production and preview origins in CORS. The repository's `render.yaml` includes the production origin and a project-scoped Vercel preview-origin regex.
+The FastAPI host must allow the Vercel production and preview origins in CORS. The backend is deployed from the root `render.yaml` Blueprint; complete its first Render sync and configure its `DATABASE_URL` using the Supabase Session pooler URI on port `5432` before pointing the frontend at it. The repository's `render.yaml` includes the production origin and a project-scoped Vercel preview-origin regex.
 
 ## Vercel deployment
 
